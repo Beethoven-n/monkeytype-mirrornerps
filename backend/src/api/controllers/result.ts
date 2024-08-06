@@ -36,6 +36,12 @@ import * as WeeklyXpLeaderboard from "../../services/weekly-xp-leaderboard";
 import { UAParser } from "ua-parser-js";
 import { canFunboxGetPb } from "../../utils/pb";
 import { buildDbResult } from "../../utils/result";
+import {
+  CompletedEvent,
+  Configuration,
+  PostResultResponse,
+} from "@monkeytype/shared-types";
+import { addLog } from "../../dal/logs";
 
 try {
   if (!anticheatImplemented()) throw new Error("undefined");
@@ -98,7 +104,7 @@ export async function getResults(
     limit,
     offset,
   });
-  void Logger.logToDb(
+  void addLog(
     "user_results_requested",
     {
       limit,
@@ -125,7 +131,7 @@ export async function deleteAll(
   const { uid } = req.ctx.decodedToken;
 
   await ResultDAL.deleteAll(uid);
-  void Logger.logToDb("user_results_deleted", "", uid);
+  void addLog("user_results_deleted", "", uid);
   return new MonkeyResponse("All results deleted");
 }
 
@@ -178,10 +184,7 @@ export async function addResult(
     );
   }
 
-  const completedEvent = Object.assign(
-    {},
-    req.body.result
-  ) as SharedTypes.CompletedEvent;
+  const completedEvent = Object.assign({}, req.body.result) as CompletedEvent;
   if (!user.lbOptOut && completedEvent.acc < 75) {
     throw new MonkeyError(
       400,
@@ -203,7 +206,7 @@ export async function addResult(
   if (req.ctx.configuration.results.objectHashCheckEnabled) {
     const serverhash = objectHash(completedEvent);
     if (serverhash !== resulthash) {
-      void Logger.logToDb(
+      void addLog(
         "incorrect_result_hash",
         {
           serverhash,
@@ -304,7 +307,7 @@ export async function addResult(
   const earliestPossible = (lastResultTimestamp ?? 0) + testDurationMilis;
   const nowNoMilis = Math.floor(Date.now() / 1000) * 1000;
   if (lastResultTimestamp && nowNoMilis < earliestPossible - 1000) {
-    void Logger.logToDb(
+    void addLog(
       "invalid_result_spacing",
       {
         lastTimestamp: lastResultTimestamp,
@@ -374,7 +377,7 @@ export async function addResult(
   if (req.ctx.configuration.users.lastHashesCheck.enabled) {
     let lastHashes = user.lastReultHashes ?? [];
     if (lastHashes.includes(resulthash)) {
-      void Logger.logToDb(
+      void addLog(
         "duplicate_result",
         {
           lastHashes,
@@ -470,7 +473,7 @@ export async function addResult(
     user.banned !== true &&
     user.lbOptOut !== true &&
     (isDevEnvironment() || (user.timeTyping ?? 0) > 7200) &&
-    completedEvent.stopOnLetter !== true;
+    !completedEvent.stopOnLetter;
 
   const selectedBadgeId = user.inventory?.badges?.find((b) => b.selected)?.id;
   const isPremium =
@@ -589,7 +592,7 @@ export async function addResult(
   await UserDAL.incrementTestActivity(user, completedEvent.timestamp);
 
   if (isPb) {
-    void Logger.logToDb(
+    void addLog(
       "user_new_pb",
       `${completedEvent.mode + " " + completedEvent.mode2} ${
         completedEvent.wpm
@@ -600,7 +603,7 @@ export async function addResult(
     );
   }
 
-  const data: Omit<SharedTypes.PostResultResponse, "insertedId"> & {
+  const data: Omit<PostResultResponse, "insertedId"> & {
     insertedId: ObjectId;
   } = {
     isPb,
@@ -632,8 +635,8 @@ type XpResult = {
 };
 
 async function calculateXp(
-  result: SharedTypes.CompletedEvent,
-  xpConfiguration: SharedTypes.Configuration["users"]["xp"],
+  result: CompletedEvent,
+  xpConfiguration: Configuration["users"]["xp"],
   uid: string,
   currentTotalXp: number,
   streak: number

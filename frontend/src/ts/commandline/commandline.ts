@@ -378,8 +378,9 @@ async function showCommands(): Promise<void> {
       );
     }
 
-    if (command.id.startsWith("changeTheme") && command.customData) {
-      html += `<div class="command withThemeBubbles" data-command-id="${command.id}" data-index="${index}" style="${customStyle}">
+    if (command.customData !== undefined) {
+      if (command.id.startsWith("changeTheme")) {
+        html += `<div class="command withThemeBubbles" data-command-id="${command.id}" data-index="${index}" style="${customStyle}">
       ${iconHTML}<div>${display}</div>
       <div class="themeBubbles" style="background: ${command.customData["bgColor"]};outline: 0.25rem solid ${command.customData["bgColor"]};">
         <div class="themeBubble" style="background: ${command.customData["mainColor"]}"></div>
@@ -387,6 +388,20 @@ async function showCommands(): Promise<void> {
         <div class="themeBubble" style="background: ${command.customData["textColor"]}"></div>
       </div>
       </div>`;
+      }
+      if (command.id.startsWith("changeFont")) {
+        let fontFamily = command.customData["name"];
+
+        if (fontFamily === "Helvetica") {
+          fontFamily = "Comic Sans MS";
+        }
+
+        if (command.customData["isSystem"] === false) {
+          fontFamily += " Preview";
+        }
+
+        html += `<div class="command" data-command-id="${command.id}" data-index="${index}" style="font-family: ${fontFamily}">${iconHTML}<div>${display}</div></div>`;
+      }
     } else {
       html += `<div class="command" data-command-id="${command.id}" data-index="${index}" style="${customStyle}">${iconHTML}<div>${display}</div></div>`;
     }
@@ -452,6 +467,7 @@ function handleInputSubmit(): void {
     throw new Error("Can't handle input submit - command is null");
   }
   inputModeParams.command.exec?.({
+    commandlineModal: modal,
     input: inputValue,
   });
   void AnalyticsController.log("usedCommandLine", {
@@ -475,9 +491,7 @@ async function runActiveCommand(): Promise<void> {
     updateInput(inputModeParams.value as string);
     hideCommands();
   } else if (command.subgroup) {
-    CommandlineLists.pushToStack(
-      command.subgroup as MonkeyTypes.CommandsSubgroup
-    );
+    CommandlineLists.pushToStack(command.subgroup);
     updateInput("");
     await filterSubgroup();
     await showCommands();

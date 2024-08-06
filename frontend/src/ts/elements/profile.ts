@@ -11,9 +11,10 @@ import * as ActivePage from "../states/active-page";
 import { formatDistanceToNowStrict } from "date-fns/formatDistanceToNowStrict";
 import { getHtmlByUserFlags } from "../controllers/user-flag-controller";
 import Format from "../utils/format";
+import { RankAndCount, UserProfile } from "@monkeytype/shared-types";
 
 type ProfileViewPaths = "profile" | "account";
-type UserProfileOrSnapshot = SharedTypes.UserProfile | MonkeyTypes.Snapshot;
+type UserProfileOrSnapshot = UserProfile | MonkeyTypes.Snapshot;
 
 //this is probably the dirtiest code ive ever written
 
@@ -293,27 +294,7 @@ export async function update(
     }
   }
 
-  const xp = profile.xp ?? 0;
-  const xpDetails = Levels.getXpDetails(xp);
-  const xpForLevel = xpDetails.levelMaxXp;
-  const xpToDisplay = xpDetails.levelCurrentXp;
-  details
-    .find(".level")
-    .text(xpDetails.level)
-    .attr("aria-label", `${formatXp(xp)} total xp`);
-  details
-    .find(".xp")
-    .text(`${formatXp(xpToDisplay)}/${formatXp(xpForLevel)}`)
-    .attr(
-      "aria-label",
-      `${formatXp(xpForLevel - xpToDisplay)} xp until next level`
-    );
-  details
-    .find(".xpBar .bar")
-    .css("width", `${(xpToDisplay / xpForLevel) * 100}%`);
-  details
-    .find(".xpBar")
-    .attr("aria-label", `${((xpToDisplay / xpForLevel) * 100).toFixed(2)}%`);
+  updateXp(profile.xp ?? 0);
   //lbs
 
   if (banned) {
@@ -395,6 +376,31 @@ export async function update(
   }
 }
 
+export function updateXp(xp: number): void {
+  const details = $(" .profile .details .levelAndBar");
+  if (details === undefined || details === null) return;
+  const xpDetails = Levels.getXpDetails(xp);
+  const xpForLevel = xpDetails.levelMaxXp;
+  const xpToDisplay = xpDetails.levelCurrentXp;
+  details
+    .find(".level")
+    .text(xpDetails.level)
+    .attr("aria-label", `${formatXp(xp)} total xp`);
+  details
+    .find(".xp")
+    .text(`${formatXp(xpToDisplay)}/${formatXp(xpForLevel)}`)
+    .attr(
+      "aria-label",
+      `${formatXp(xpForLevel - xpToDisplay)} xp until next level`
+    );
+  details
+    .find(".xpBar .bar")
+    .css("width", `${(xpToDisplay / xpForLevel) * 100}%`);
+  details
+    .find(".xpBar")
+    .attr("aria-label", `${((xpToDisplay / xpForLevel) * 100).toFixed(2)}%`);
+}
+
 export function updateNameFontSize(where: ProfileViewPaths): void {
   //dont run this function in safari because OH MY GOD IT IS SO SLOW
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -434,7 +440,7 @@ $(window).on("resize", () => {
   throttledEvent();
 });
 
-function formatTopPercentage(lbRank: SharedTypes.RankAndCount): string {
+function formatTopPercentage(lbRank: RankAndCount): string {
   if (lbRank.rank === undefined) return "-";
   if (lbRank.rank === 1) return "GOAT";
   return "Top " + Numbers.roundTo2((lbRank.rank / lbRank.count) * 100) + "%";

@@ -1,4 +1,6 @@
+// @ts-expect-error TODO: update slim-select
 import SlimSelect from "slim-select";
+// @ts-expect-error TODO: update slim-select
 import type { DataObjectPartial } from "slim-select/dist/store";
 import { getTestActivityCalendar } from "../db";
 import * as ServerConfiguration from "../ape/server-configuration";
@@ -38,6 +40,12 @@ function update(calendar?: MonkeyTypes.TestActivityCalendar): void {
 
   updateMonths(calendar.getMonths());
   $("#testActivity .nodata").addClass("hidden");
+  const title = document.querySelector("#testActivity .title");
+  {
+    if (title !== null) {
+      title.innerHTML = calendar.getTotalTests() + " tests";
+    }
+  }
 
   for (const day of calendar.getDays()) {
     const elem = document.createElement("div");
@@ -100,6 +108,7 @@ function getYearSelector(): SlimSelect {
       showSearch: false,
     },
     events: {
+      // @ts-expect-error TODO: update slim-select
       afterChange: async (newVal): Promise<void> => {
         yearSelector?.disable();
         const selected = newVal[0]?.value as string;

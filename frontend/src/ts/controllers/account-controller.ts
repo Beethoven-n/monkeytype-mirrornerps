@@ -15,6 +15,7 @@ import * as LoginPage from "../pages/login";
 import * as ResultFilters from "../elements/account/result-filters";
 import * as TagController from "./tag-controller";
 import * as RegisterCaptchaModal from "../modals/register-captcha";
+import * as LastSignedOutResultModal from "../modals/last-signed-out-result";
 import * as URLHandler from "../utils/url-handler";
 import * as Account from "../pages/account";
 import * as Alerts from "../elements/alerts";
@@ -44,8 +45,6 @@ import {
 import * as ConnectionState from "../states/connection";
 import { navigate } from "./route-controller";
 import { getHtmlByUserFlags } from "./user-flag-controller";
-
-let signedOutThisSession = false;
 
 export const gmailProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
@@ -108,6 +107,7 @@ async function getDataAndInit(): Promise<boolean> {
     Notifications.add("Failed to get user data: " + msg, -1);
     console.error(e);
 
+    LoginPage.enableInputs();
     $("header nav .account").css("opacity", 1);
     return false;
   }
@@ -208,20 +208,9 @@ export async function loadUser(user: UserType): Promise<void> {
 
   // showFavouriteThemesAtTheTop();
 
-  if (TestLogic.notSignedInLastResult !== null && !signedOutThisSession) {
+  if (TestLogic.notSignedInLastResult !== null) {
     TestLogic.setNotSignedInUid(user.uid);
-
-    const response = await Ape.results.save(TestLogic.notSignedInLastResult);
-
-    if (response.status !== 200) {
-      return Notifications.add(
-        "Failed to save last result: " + response.message,
-        -1
-      );
-    }
-
-    TestLogic.clearNotSignedInResult();
-    Notifications.add("Last test result saved", 1);
+    LastSignedOutResultModal.show();
   }
 }
 
@@ -275,7 +264,7 @@ if (Auth && ConnectionState.get()) {
   });
 }
 
-async function signIn(): Promise<void> {
+export async function signIn(email: string, password: string): Promise<void> {
   if (Auth === undefined) {
     Notifications.add("Authentication uninitialized", -1);
     return;
@@ -291,8 +280,6 @@ async function signIn(): Promise<void> {
   LoginPage.showPreloader();
   LoginPage.disableInputs();
   LoginPage.disableSignUpButton();
-  const email = ($(".pageLogin .login input")[0] as HTMLInputElement).value;
-  const password = ($(".pageLogin .login input")[1] as HTMLInputElement).value;
 
   if (email === "" || password === "") {
     Notifications.add("Please fill in all fields", 0);
@@ -381,6 +368,9 @@ async function signInWithProvider(provider: AuthProvider): Promise<void> {
         message = "";
         // message = "Popup closed by user";
         // return;
+      } else if (error.code === "auth/popup-blocked") {
+        message =
+          "Sign in popup was blocked by the browser. Check the address bar for a blocked popup icon, or update your browser settings to allow popups.";
       } else if (error.code === "auth/user-cancelled") {
         message = "";
         // message = "User refused to sign in";
@@ -489,7 +479,7 @@ async function signUp(): Promise<void> {
     });
     return;
   }
-  await RegisterCaptchaModal.show();
+  RegisterCaptchaModal.show();
   const captchaToken = await RegisterCaptchaModal.promise;
   if (captchaToken === undefined || captchaToken === "") {
     Notifications.add("Please complete the captcha", -1);
@@ -623,7 +613,11 @@ async function signUp(): Promise<void> {
 
 $(".pageLogin .login form").on("submit", (e) => {
   e.preventDefault();
-  void signIn();
+  const email =
+    ($(".pageLogin .login input")[0] as HTMLInputElement).value ?? "";
+  const password =
+    ($(".pageLogin .login input")[1] as HTMLInputElement).value ?? "";
+  void signIn(email, password);
 });
 
 $(".pageLogin .login button.signInWithGoogle").on("click", () => {
@@ -643,7 +637,6 @@ $("header .signInOut").on("click", () => {
   }
   if (isAuthenticated()) {
     signOut();
-    signedOutThisSession = true;
   } else {
     navigate("/login");
   }

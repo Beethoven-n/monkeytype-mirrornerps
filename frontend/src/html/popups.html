@@ -4,12 +4,52 @@
   </div>
 </dialog>
 
+<dialog id="lastSignedOutResult" class="modalWrapper hidden">
+  <div class="modal">
+    <div class="title">Last signed out result</div>
+    <div class="question">Would you like to save it?</div>
+    <div class="divider"></div>
+    <div class="result">
+      <div class="group wpm">
+        <div class="sub">wpm</div>
+        <div class="val">-</div>
+      </div>
+      <div class="group acc">
+        <div class="sub">accuracy</div>
+        <div class="val">-</div>
+      </div>
+      <div class="group raw">
+        <div class="sub">raw</div>
+        <div class="val">-</div>
+      </div>
+      <div class="group con">
+        <div class="sub">consistency</div>
+        <div class="val">-</div>
+      </div>
+      <div class="group chardata">
+        <div class="sub">characters</div>
+        <div class="val">-</div>
+      </div>
+      <div class="group testType">
+        <div class="sub">test type</div>
+        <div class="val">-</div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button class="save">save</button>
+      <button class="discard">discard</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="devOptionsModal" class="modalWrapper hidden">
   <div class="modal">
     <div class="title">Dev options</div>
     <button class="generateData">generate data</button>
+    <button class="quickLogin">quick login</button>
     <button class="toggleMediaQueryDebug">toggle media query debug</button>
     <button class="showTestNotifications">show test notifications</button>
+    <button class="showRealWordsInput">show real words input</button>
   </div>
 </dialog>
 
@@ -77,7 +117,7 @@
   </div>
   <div class="modal">
     <div class="title">
-      <i class="fas far fa-cookie-bite"></i>
+      <i class="fas fa-cookie-bite"></i>
       We use cookies by the way
     </div>
     <div class="main">
@@ -270,19 +310,44 @@
   </div>
 </dialog>
 
-<div id="practiseWordsPopupWrapper" class="popupWrapper hidden" tabindex="-1">
-  <div id="practiseWordsPopup" action="">
+<dialog id="practiseWordsModal" class="modalWrapper hidden">
+  <div class="modal" actions="">
     <div class="title">Practice words</div>
-    <div class="text">
-      This will start a new test in custom mode. Words that you mistyped more
-      often or words that you typed much slower will be weighted higher and
-      appear more often.
+    <!-- <div class="inputs"> -->
+    <div class="group" data-id="missed">
+      <div class="title">
+        <i class="fas fa-times"></i>
+        missed
+      </div>
+      <div class="sub">
+        Include missed words or biwords (which include the previous word).
+      </div>
+      <div class="groupInputs">
+        <div class="buttonGroup">
+          <button class="missedOff" value="off">off</button>
+          <button class="missedWords" value="words">words</button>
+          <button class="missedBiwords" value="biwords">biwords</button>
+        </div>
+      </div>
     </div>
-    <div class="button missed" tabindex="1">Practice missed</div>
-    <div class="button slow" tabindex="1">Practice slow</div>
-    <div class="button both" tabindex="1">Practice both</div>
+    <div class="group" data-id="slow">
+      <div class="title">
+        <i class="fas fa-tachometer-alt"></i>
+        slow
+      </div>
+      <div class="sub">Include words which you typed slower than others.</div>
+      <div class="groupInputs">
+        <div class="buttonGroup">
+          <button class="slowOff" value="false">off</button>
+          <button class="slowOn" value="true">on</button>
+        </div>
+      </div>
+    </div>
+    <div></div>
+    <!-- </div> -->
+    <button class="start">start</button>
   </div>
-</div>
+</dialog>
 
 <dialog id="quoteRateModal" class="modalWrapper hidden">
   <div class="modal">
@@ -817,6 +882,7 @@
     <label>reason</label>
     <select name="report-reason" class="reason" title="reason">
       <option value="Grammatical error">Grammatical error</option>
+      <option value="Duplicate quote">Duplicate quote</option>
       <option value="Inappropriate content">Inappropriate content</option>
       <option value="Low quality content">Low quality content</option>
       <option value="Incorrect source">Incorrect source</option>

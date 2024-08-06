@@ -8,6 +8,7 @@ import { capsState } from "../test/caps-warning";
 import * as Notifications from "../elements/notifications";
 
 import type { Howl } from "howler";
+import { PlaySoundOnClick } from "@monkeytype/contracts/schemas/configs";
 
 async function gethowler(): Promise<typeof import("howler")> {
   return await import("howler");
@@ -80,7 +81,7 @@ async function initErrorSound(): Promise<void> {
       },
     ],
   };
-  Howler.volume(parseFloat(Config.soundVolume));
+  Howler.volume(Config.soundVolume);
 }
 
 async function init(): Promise<void> {
@@ -386,7 +387,7 @@ async function init(): Promise<void> {
       },
     ],
   };
-  Howler.volume(parseFloat(Config.soundVolume));
+  Howler.volume(Config.soundVolume);
 }
 
 export async function previewClick(val: string): Promise<void> {
@@ -478,10 +479,7 @@ const codeToNote: Record<string, GetNoteFrequencyCallback> = {
   BracketRight: bindToNote(notes.G, 2),
 };
 
-type DynamicClickSounds = Extract<
-  SharedTypes.Config.PlaySoundOnClick,
-  "8" | "9" | "10" | "11"
->;
+type DynamicClickSounds = Extract<PlaySoundOnClick, "8" | "9" | "10" | "11">;
 type SupportedOscillatorTypes = Exclude<OscillatorType, "custom">;
 
 const clickSoundIdsToOscillatorType: Record<
@@ -551,7 +549,7 @@ const defaultScaleData: ScaleData = {
 };
 
 export const scaleConfigurations: Record<
-  Extract<SharedTypes.Config.PlaySoundOnClick, "12" | "13">,
+  Extract<PlaySoundOnClick, "12" | "13">,
   ScaleMeta
 > = {
   "12": {
@@ -593,7 +591,7 @@ function playScale(scale: ValidScales, scaleMeta: ScaleData): void {
   const gainNode = audioCtx.createGain();
 
   oscillatorNode.type = "sine";
-  gainNode.gain.value = parseFloat(Config.soundVolume) / 10;
+  gainNode.gain.value = Config.soundVolume / 10;
   oscillatorNode.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   oscillatorNode.frequency.value = currentFrequency;
@@ -628,7 +626,7 @@ export function playNote(
     clickSoundIdsToOscillatorType[
       Config.playSoundOnClick as DynamicClickSounds
     ];
-  gainNode.gain.value = parseFloat(Config.soundVolume) / 10;
+  gainNode.gain.value = Config.soundVolume / 10;
 
   oscillatorNode.connect(gainNode);
   gainNode.connect(audioCtx.destination);
@@ -697,5 +695,7 @@ function setVolume(val: number): void {
 
 ConfigEvent.subscribe((eventKey, eventValue) => {
   if (eventKey === "playSoundOnClick" && eventValue !== "off") void init();
-  if (eventKey === "soundVolume") setVolume(parseFloat(eventValue as string));
+  if (eventKey === "soundVolume") {
+    setVolume(parseFloat(eventValue as string));
+  }
 });

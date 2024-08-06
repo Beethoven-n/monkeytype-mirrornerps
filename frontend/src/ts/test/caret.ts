@@ -55,7 +55,10 @@ function getTargetPositionLeft(
         fullWidthOffset;
     }
   } else {
-    if (Config.blindMode && inputLenLongerThanWordLen) {
+    if (
+      (Config.blindMode || Config.hideExtraLetters) &&
+      inputLenLongerThanWordLen
+    ) {
       result = lastWordLetter.offsetLeft + lastWordLetter.offsetWidth;
     } else if (currentLetter !== undefined) {
       result = currentLetter.offsetLeft;
@@ -116,8 +119,8 @@ export async function updatePosition(noAnim = false): Promise<void> {
   );
 
   const letterPosTop =
-    currentLetter?.offsetTop ||
-    previousLetter?.offsetTop ||
+    currentLetter?.offsetTop ??
+    previousLetter?.offsetTop ??
     lastWordLetter?.offsetTop;
 
   const letterHeight =
@@ -147,24 +150,13 @@ export async function updatePosition(noAnim = false): Promise<void> {
   const wordsWrapperWidth =
     $(document.querySelector("#wordsWrapper") as HTMLElement).width() ?? 0;
 
-  if (Config.tapeMode === "letter") {
+  if (
+    Config.tapeMode === "letter" ||
+    (Config.tapeMode === "word" && inputLen === 0)
+  ) {
     newLeft = wordsWrapperWidth / 2 - (fullWidthCaret ? 0 : caretWidth / 2);
-  } else if (Config.tapeMode === "word") {
-    if (inputLen === 0) {
-      newLeft = wordsWrapperWidth / 2 - (fullWidthCaret ? 0 : caretWidth / 2);
-    } else {
-      let inputWidth = 0;
-      for (let i = 0; i < inputLen; i++) {
-        inputWidth += $(currentWordNodeList[i] as HTMLElement).outerWidth(
-          true
-        ) as number;
-      }
-      newLeft =
-        wordsWrapperWidth / 2 +
-        inputWidth -
-        (fullWidthCaret ? 0 : caretWidth / 2);
-    }
   }
+
   const newWidth = fullWidthCaret ? (letterWidth ?? 0) + "px" : "";
 
   let smoothlinescroll = $("#words .smoothScroller").height();
